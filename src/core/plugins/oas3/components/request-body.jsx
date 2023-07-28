@@ -31,7 +31,6 @@ export const getDefaultRequestBodyValue = (requestBody, mediaType, activeExample
 }
 
 
-
 const RequestBody = ({
   userHasEditedBody,
   requestBody,
@@ -72,6 +71,8 @@ const RequestBody = ({
   const ModelExample = getComponent("modelExample")
   const RequestBodyEditor = getComponent("RequestBodyEditor")
   const HighlightCode = getComponent("highlightCode")
+  const HighlightCodeRemote = getComponent("highlightCodeRemote")
+
   const ExamplesSelectValueRetainer = getComponent("ExamplesSelectValueRetainer")
   const Example = getComponent("Example")
   const ParameterIncludeEmpty = getComponent("ParameterIncludeEmpty")
@@ -87,7 +88,7 @@ const RequestBody = ({
   const rawExamplesOfMediaType = mediaTypeValue.get("examples", null)
   const sampleForMediaType = rawExamplesOfMediaType?.map((container, key) => {
     const val = container?.get("value", null)
-    if(val) {
+    if (val) {
       container = container.set("value", getDefaultRequestBodyValue(
         requestBody,
         contentType,
@@ -97,13 +98,31 @@ const RequestBody = ({
     }
     return container
   })
+  const externalVal = rawExamplesOfMediaType?.map((container, key) => {
+    const mediaTypeValue = requestBody.getIn(["content", contentType])
+    const schema = mediaTypeValue.get("schema").toJS()
+
+    const hasExamplesKey = mediaTypeValue.get("examples") !== undefined
+    const exampleSchema = mediaTypeValue.get("example")
+    const mediaTypeExample = hasExamplesKey
+      ? mediaTypeValue.getIn([
+        "examples",
+        activeExamplesKey,
+        "externalValue"
+      ])
+      : exampleSchema;
+      if(mediaTypeExample) return mediaTypeExample;
+  });
+  console.log("okok", externalVal)
+  console.log("external vv", externalVal.get(activeExamplesKey))
+  console.log("activeExamplesKey", activeExamplesKey);
 
   const handleExamplesSelect = (key /*, { isSyntheticChange } */) => {
     updateActiveExamplesKey(key)
   }
   requestBodyErrors = List.isList(requestBodyErrors) ? requestBodyErrors : List()
 
-  if(!mediaTypeValue.size) {
+  if (!mediaTypeValue.size) {
     return null
   }
 
@@ -111,7 +130,7 @@ const RequestBody = ({
   const isBinaryFormat = mediaTypeValue.getIn(["schema", "format"]) === "binary"
   const isBase64Format = mediaTypeValue.getIn(["schema", "format"]) === "base64"
 
-  if(
+  if (
     contentType === "application/octet-stream"
     || contentType.indexOf("image/") === 0
     || contentType.indexOf("audio/") === 0
@@ -121,7 +140,7 @@ const RequestBody = ({
   ) {
     const Input = getComponent("Input")
 
-    if(!isExecute) {
+    if (!isExecute) {
       return <i>
         Example values are not available for <code>{contentType}</code> media types.
       </i>
@@ -144,7 +163,7 @@ const RequestBody = ({
     requestBodyValue = Map.isMap(requestBodyValue) ? requestBodyValue : OrderedMap()
 
     return <div className="table-container">
-      { requestBodyDescription &&
+      {requestBodyDescription &&
         <Markdown source={requestBodyDescription} />
       }
       <table>
@@ -181,7 +200,7 @@ const RequestBody = ({
               }
 
               if (typeof initialValue !== "string" && type === "object") {
-               initialValue = stringify(initialValue)
+                initialValue = stringify(initialValue)
               }
               if (typeof initialValue === "string" && type === "array") {
                 initialValue = JSON.parse(initialValue)
@@ -190,46 +209,46 @@ const RequestBody = ({
               const isFile = type === "string" && (format === "binary" || format === "base64")
 
               return <tr key={key} className="parameters" data-property-name={key}>
-              <td className="parameters-col_name">
-                <div className={required ? "parameter__name required" : "parameter__name"}>
-                  { key }
-                  { !required ? null : <span>&nbsp;*</span> }
-                </div>
-                <div className="parameter__type">
-                  { type }
-                  { format && <span className="prop-format">(${format})</span>}
-                  {!showCommonExtensions || !commonExt.size ? null : commonExt.entrySeq().map(([key, v]) => <ParameterExt key={`${key}-${v}`} xKey={key} xVal={v} />)}
-                </div>
-                <div className="parameter__deprecated">
-                  { prop.get("deprecated") ? "deprecated": null }
-                </div>
-              </td>
-              <td className="parameters-col_description">
-                <Markdown source={ description }></Markdown>
-                {isExecute ? <div>
-                  <JsonSchemaForm
-                    fn={fn}
-                    dispatchInitialValue={!isFile}
-                    schema={prop}
-                    description={key}
-                    getComponent={getComponent}
-                    value={currentValue === undefined ? initialValue : currentValue}
-                    required = { required }
-                    errors = { currentErrors }
-                    onChange={(value) => {
-                      onChange(value, [key])
-                    }}
-                  />
-                  {required ? null : (
-                    <ParameterIncludeEmpty
-                      onChange={(value) => onChangeIncludeEmpty(key, value)}
-                      isIncluded={included}
-                      isIncludedOptions={setIsIncludedOptions(key)}
-                      isDisabled={Array.isArray(currentValue) ? currentValue.length !== 0 : !isEmptyValue(currentValue)}
+                <td className="parameters-col_name">
+                  <div className={required ? "parameter__name required" : "parameter__name"}>
+                    {key}
+                    {!required ? null : <span>&nbsp;*</span>}
+                  </div>
+                  <div className="parameter__type">
+                    {type}
+                    {format && <span className="prop-format">(${format})</span>}
+                    {!showCommonExtensions || !commonExt.size ? null : commonExt.entrySeq().map(([key, v]) => <ParameterExt key={`${key}-${v}`} xKey={key} xVal={v} />)}
+                  </div>
+                  <div className="parameter__deprecated">
+                    {prop.get("deprecated") ? "deprecated" : null}
+                  </div>
+                </td>
+                <td className="parameters-col_description">
+                  <Markdown source={description}></Markdown>
+                  {isExecute ? <div>
+                    <JsonSchemaForm
+                      fn={fn}
+                      dispatchInitialValue={!isFile}
+                      schema={prop}
+                      description={key}
+                      getComponent={getComponent}
+                      value={currentValue === undefined ? initialValue : currentValue}
+                      required={required}
+                      errors={currentErrors}
+                      onChange={(value) => {
+                        onChange(value, [key])
+                      }}
                     />
-                  )}
-                </div> : null }
-              </td>
+                    {required ? null : (
+                      <ParameterIncludeEmpty
+                        onChange={(value) => onChangeIncludeEmpty(key, value)}
+                        isIncluded={included}
+                        isIncludedOptions={setIsIncludedOptions(key)}
+                        isDisabled={Array.isArray(currentValue) ? currentValue.length !== 0 : !isEmptyValue(currentValue)}
+                      />
+                    )}
+                  </div> : null}
+                </td>
               </tr>
             })
           }
@@ -237,6 +256,7 @@ const RequestBody = ({
       </table>
     </div>
   }
+
 
   const sampleRequestBody = getDefaultRequestBodyValue(
     requestBody,
@@ -251,22 +271,22 @@ const RequestBody = ({
   }
 
   return <div>
-    { requestBodyDescription &&
+    {requestBodyDescription &&
       <Markdown source={requestBodyDescription} />
     }
     {
       sampleForMediaType ? (
         <ExamplesSelectValueRetainer
-            userHasEditedBody={userHasEditedBody}
-            examples={sampleForMediaType}
-            currentKey={activeExamplesKey}
-            currentUserInputValue={requestBodyValue}
-            onSelect={handleExamplesSelect}
-            updateValue={onChange}
-            defaultToFirstExample={true}
-            getComponent={getComponent}
-            setRetainRequestBodyValueFlag={setRetainRequestBodyValueFlag}
-          />
+          userHasEditedBody={userHasEditedBody}
+          examples={sampleForMediaType}
+          currentKey={activeExamplesKey}
+          currentUserInputValue={requestBodyValue}
+          onSelect={handleExamplesSelect}
+          updateValue={onChange}
+          defaultToFirstExample={true}
+          getComponent={getComponent}
+          setRetainRequestBodyValueFlag={setRetainRequestBodyValueFlag}
+        />
       ) : null
     }
     {
@@ -276,21 +296,25 @@ const RequestBody = ({
             value={requestBodyValue}
             errors={requestBodyErrors}
             defaultValue={sampleRequestBody}
+            url={externalVal.get(activeExamplesKey)}
             onChange={onChange}
             getComponent={getComponent}
           />
         </div>
       ) : (
+      
         <ModelExample
-          getComponent={ getComponent }
-          getConfigs={ getConfigs }
-          specSelectors={ specSelectors }
+          getComponent={getComponent}
+          getConfigs={getConfigs}
+          specSelectors={specSelectors}
           expandDepth={1}
           isExecute={isExecute}
           schema={mediaTypeValue.get("schema")}
           specPath={specPath.push("content", contentType)}
           example={
-            <HighlightCode
+            externalVal.get(activeExamplesKey) ? 
+            <HighlightCodeRemote url={externalVal.get(activeExamplesKey)} HighlightCode={HighlightCode} />
+            :<HighlightCode
               className="body-param__example"
               getConfigs={getConfigs}
               language={language}

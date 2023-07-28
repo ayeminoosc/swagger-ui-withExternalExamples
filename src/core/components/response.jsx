@@ -141,6 +141,7 @@ export default class Response extends React.Component {
       sampleSchema = activeMediaType.get("schema")?.toJS()
       if (examplesForMediaType) {
         const targetExamplesKey = this.getTargetExamplesKey()
+        console.log("targetExamplesKey", targetExamplesKey);
         const targetExample = examplesForMediaType
           .get(targetExamplesKey, Map({}))
         const getMediaTypeExample = (targetExample) =>

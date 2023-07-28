@@ -11,6 +11,7 @@ export default class RequestBodyEditor extends PureComponent {
     onChange: PropTypes.func,
     getComponent: PropTypes.func.isRequired,
     value: PropTypes.string,
+    url:  PropTypes.string,
     defaultValue: PropTypes.string,
     errors: PropTypes.array,
   }
@@ -18,6 +19,15 @@ export default class RequestBodyEditor extends PureComponent {
   static defaultProps = {
     onChange: NOOP,
     userHasEditedBody: false,
+  }
+
+  loadExternalValue() {
+    if(this.props.url){
+      fetch(this.props.url)
+      .then(response => response.text())
+      .then(data => this.setState({ value: stringify(data) }));
+    }
+    
   }
 
   constructor(props, context) {
@@ -31,6 +41,10 @@ export default class RequestBodyEditor extends PureComponent {
     // current request body value
     // TODO: achieve this in a selector instead
     props.onChange(props.value)
+  }
+
+  componentDidMount() {
+    this.loadExternalValue()
   }
 
   applyDefaultValue = (nextProps) => {
